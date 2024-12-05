@@ -512,17 +512,83 @@ class Human:
                             headers=self.headers,
                             cookies=self.cookies)
         return response.json()[0]['id']
-
-
-
-    def test(self):
+    
+    def get_school_id(self, id: int = 0):
         params = {
-            "expand": "members.member",
-            # "type_id": "1"
+            "expand": "members",
+            "_limit": "987654321"
         }
-        response = requests.get(f"https://api.human.ua/v1/{self.human_id}/group/group/{self.get_group_id()}",
+        response = requests.get(f"https://api.human.ua/v1/{self.human_id}/group/community-search",
                                 cookies=self.cookies,
                                 headers=self.headers,
                                 params=params)
-        return response
+        try:
+            return response.json()[id]['id']
+        except IndexError:
+            raise ValueError('Not found')
+
+    def get_members_of_school(self, id_school = 0):
+        params = {
+            "expand": "members.member",
+        }
+        members = requests.get(f"https://api.human.ua/v1/{self.human_id}/group/group/{self.get_school_id(id_school)}",
+                                cookies=self.cookies,
+                                headers=self.headers,
+                                params=params).json()
+        members_school = {}
+
+        for member in members['members']:
+            if member['group_role_id'] == 5 and member['member']['status'] == 1:
+                members_school[member['user_id']] = (f"{member['member']['first_name']} {member['member']['last_name']} {member['member']['patronymic']}")
+                
+        return members_school
+    
+    def get_analytics_my_school_humanid_marks(self):
+        result = {}
+        classmates = self.get_members_of_school()
+        def get_human_id_marks(id):
+            try:
+                marks = []
+                response = self.get_analytics_by_human_id(id)
+                if response:
+                    for a in response:
+                        for mark in response[a]:
+                            if mark:
+                                marks.append(mark) 
+                if marks:
+                    id = id, classmates[id]
+                    if id == self.human_id:
+                        id = 'You'
+                    result[id] = marks
+            except Exception as ex:
+                print(ex)
+                pass
+        
+        with ThreadPoolExecutor(len(classmates)/(len(classmates)/10)) as executor:
+            executor.map(get_human_id_marks, classmates)
+        
+        return result
+
+    def get_leaderboard_of_my_school(self):
+        """Таблица лидеров школы\n
+        Возвращает словарь: \n
+        {\n
+            human_id: место_в_топе\n
+        }"""
+        
+        analytics = self.get_analytics_my_school_humanid_marks()
+        new_dict = {}
+        for human_id, marks in analytics.items():
+            if marks:
+                new_dict[human_id] = round(sum(marks) / len(marks), 2)
+
+        sorted_analytics = OrderedDict(
+            sorted(new_dict.items(), key=lambda item: item[1], reverse=True)
+        )
+
+        result = {human_id[1]: rank for rank, human_id in enumerate(sorted_analytics, start=1)}
+
+        result = OrderedDict(sorted(result.items(), key=lambda item: item[1]))
+
+        return result
 
