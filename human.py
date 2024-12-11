@@ -6,14 +6,6 @@ import calendar
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 
-print("""
-  __  __               _            _                 _____                                                       
- |  \/  |   __ _    __| |   ___    | |__    _   _    |  ___|   ___   _ __   _   _   _   _  __   __ __   __   __ _ 
- | |\/| |  / _` |  / _` |  / _ \   | '_ \  | | | |   | |_     / _ \ | '__| | | | | | | | | \ \ / / \ \ / /  / _` |
- | |  | | | (_| | | (_| | |  __/   | |_) | | |_| |   |  _|   |  __/ | |    | |_| | | |_| |  \ V /   \ V /  | (_| |
- |_|  |_|  \__,_|  \__,_|  \___|   |_.__/   \__, |   |_|      \___| |_|     \__, |  \__,_|   \_/     \_/    \__,_|
-                                            |___/                           |___/""")
-
 
 
 def generic_headers():
@@ -75,6 +67,13 @@ class Human:
         except KeyError:
             raise KeyError("Неверно указаны данные для входа!")
         self.name = response['institutions'][0]['first_name']
+        print("""
+  __  __               _            _                 _____                                                       
+ |  \/  |   __ _    __| |   ___    | |__    _   _    |  ___|   ___   _ __   _   _   _   _  __   __ __   __   __ _ 
+ | |\/| |  / _` |  / _` |  / _ \   | '_ \  | | | |   | |_     / _ \ | '__| | | | | | | | | \ \ / / \ \ / /  / _` |
+ | |  | | | (_| | | (_| | |  __/   | |_) | | |_| |   |  _|   |  __/ | |    | |_| | | |_| |  \ V /   \ V /  | (_| |
+ |_|  |_|  \__,_|  \__,_|  \___|   |_.__/   \__, |   |_|      \___| |_|     \__, |  \__,_|   \_/     \_/    \__,_|
+                                            |___/                           |___/""")
     
     def __str__(self):
         return f"My name: {self.name}\nMy email: {self.email}\nMy human_id: {self.human_id}\nMy requests headers: {self.headers}"
@@ -85,7 +84,6 @@ class Human:
         params = {
             "expand": "type.name,group.subject,home_tasks_user.assessment",
             "filter": "received",
-            "_limit": "987654321"
         }
         response = requests.get(f'https://api.human.ua/v1/{self.human_id}/home-task/home-task/students-tasks', 
                                 headers=self.headers, 
@@ -123,12 +121,13 @@ class Human:
         start_of_day = datetime(year=now.year, month=now.month, day=now.day).timestamp()
         dates = []
         lessons = []
-        params = {
-            "dateStart": start_of_day,
-            "dateFinish": start_of_day+86400,
-            "expand": "group.subject,webConference,classroom"
-        }
+
         while True:
+            params = {
+                "dateStart": start_of_day,
+                "dateFinish": start_of_day+86400,
+                "expand": "group.subject,webConference,classroom"
+            }
             response = requests.get(f'https://api.human.ua/v1/{self.human_id}/calendar', 
                                     headers=self.headers, 
                                     cookies=self.cookies,
@@ -308,12 +307,13 @@ class Human:
 
         return TaskLinks(result)
     
-    def get_tasks_tests_sort_by_date(self, date = 0) -> TaskLinks:
+    def get_tasks_links_sort_by_date(self, date = 0) -> TaskLinks:
         """Получить все тесты, сортировка по дате\n
         0 = Текущая неделя\n
         1 = Прошлая неделя\n
         2 = Этот месяц\n
-        3 = Прошлый месяц\n"""
+        3 = Прошлый месяц\n
+        """
         result = []
         urls = []
         def get_links(url) -> None:
@@ -340,7 +340,6 @@ class Human:
         def get_task(url) -> None:
             params = {
                 "expand": "members,home_tasks.assessments,home_tasks.recipients,home_tasks.type,home_tasks.home_tasks_users,home_tasks.files,home_tasks.links.attachment,home_tasks.content,lesson_tasks.type,lesson_tasks.assessments,lesson_tasks.content",
-                "_limit": "987654321"
             }
             if date == 0 :
                 today = datetime.today()
@@ -591,4 +590,3 @@ class Human:
         result = OrderedDict(sorted(result.items(), key=lambda item: item[1]))
 
         return result
-
