@@ -580,7 +580,7 @@ class Human:
         new_dict = {}
         for human_id, marks in analytics.items():
             if marks:
-                new_dict[human_id] = round(sum(marks) / len(marks), 2)
+                new_dict[human_id] = round(sum(marks) / len(marks), 4)
 
         sorted_analytics = OrderedDict(
             sorted(new_dict.items(), key=lambda item: item[1], reverse=True)
